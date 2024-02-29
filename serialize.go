@@ -5,6 +5,8 @@
 package cookiejar
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"io"
 	"log"
@@ -70,6 +72,23 @@ func (j *Jar) save(now time.Time) error {
 	return j.writeTo(f)
 }
 
+func (j *Jar) SaveBytes(now time.Time) ([]byte, error) {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	j.deleteExpired(now)
+	var b bytes.Buffer
+	writer := bufio.NewWriter(&b)
+	err := j.writeTo(writer)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	err = writer.Flush()
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return b.Bytes(), nil
+}
+
 // load loads the cookies from j.filename. If the file does not exist,
 // no error will be returned and no cookies will be loaded.
 func (j *Jar) load() error {
@@ -93,6 +112,15 @@ func (j *Jar) load() error {
 	}
 	defer f.Close()
 	if err := j.mergeFrom(f); err != nil {
+		return errgo.Mask(err)
+	}
+	return nil
+}
+
+func (j *Jar) LoadFromBytes(b []byte) error {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	if err := j.mergeFrom(bytes.NewReader(b)); err != nil {
 		return errgo.Mask(err)
 	}
 	return nil
@@ -152,11 +180,13 @@ func lockFileName(path string) string {
 	return path + ".lock"
 }
 
-var attempt = retry.LimitTime(3*time.Second, retry.Exponential{
-	Initial:  100 * time.Microsecond,
-	Factor:   1.5,
-	MaxDelay: 100 * time.Millisecond,
-})
+var attempt = retry.LimitTime(
+	3*time.Second, retry.Exponential{
+		Initial:  100 * time.Microsecond,
+		Factor:   1.5,
+		MaxDelay: 100 * time.Millisecond,
+	},
+)
 
 func lockFile(path string) (io.Closer, error) {
 	for a := retry.Start(attempt, nil); a.Next(); {
