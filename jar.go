@@ -28,9 +28,9 @@ import (
 )
 
 // PublicSuffixList provides the public suffix of a domain. For example:
-//      - the public suffix of "example.com" is "com",
-//      - the public suffix of "foo1.foo2.foo3.co.uk" is "co.uk", and
-//      - the public suffix of "bar.pvt.k12.ma.us" is "pvt.k12.ma.us".
+//   - the public suffix of "example.com" is "com",
+//   - the public suffix of "foo1.foo2.foo3.co.uk" is "co.uk", and
+//   - the public suffix of "bar.pvt.k12.ma.us" is "pvt.k12.ma.us".
 //
 // Implementations of PublicSuffixList must be safe for concurrent use by
 // multiple goroutines.
@@ -86,7 +86,8 @@ type Jar struct {
 
 	// entries is a set of entries, keyed by their eTLD+1 and subkeyed by
 	// their name/domain/path.
-	entries map[string]map[string]entry
+	entries            map[string]map[string]entry
+	blacklistedEntries map[string]map[string]entry
 }
 
 var noOptions Options
@@ -103,7 +104,8 @@ func New(o *Options) (*Jar, error) {
 // newAtTime is like New but takes the current time as a parameter.
 func newAtTime(o *Options, now time.Time) (*Jar, error) {
 	jar := &Jar{
-		entries: make(map[string]map[string]entry),
+		entries:            make(map[string]map[string]entry),
+		blacklistedEntries: make(map[string]map[string]entry),
 	}
 	if o == nil {
 		o = &noOptions
@@ -447,6 +449,54 @@ func (j *Jar) RemoveAll() {
 	}
 }
 
+// SetBlacklistedCookies sets the cookies as blacklisted for the given URL.
+func (j *Jar) SetBlacklistedCookies(u *url.URL, cookies []*http.Cookie) {
+	j.setBlacklistedCookies(u, cookies)
+}
+
+func (j *Jar) setBlacklistedCookies(u *url.URL, cookies []*http.Cookie) {
+	now := time.Date(1970, 01, 01, 0, 0, 0, 0, time.UTC)
+	if len(cookies) == 0 {
+		return
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		// TODO is this really correct? It might be nice to send
+		// cookies to websocket connections, for example.
+		return
+	}
+	host, err := canonicalHost(u.Host)
+	if err != nil {
+		return
+	}
+	key := jarKey(host, j.psList)
+	defPath := defaultPath(u.Path)
+
+	j.mu.Lock()
+	defer j.mu.Unlock()
+
+	submap := j.blacklistedEntries[key]
+	for _, cookie := range cookies {
+		e, err := j.newEntry(cookie, now, defPath, host)
+		if err != nil {
+			continue
+		}
+		e.CanonicalHost = host
+		id := e.id()
+		if submap == nil {
+			submap = make(map[string]entry)
+			j.blacklistedEntries[key] = submap
+		}
+		if old, ok := submap[id]; ok {
+			e.Creation = old.Creation
+		} else {
+			e.Creation = now
+		}
+		e.Updated = now
+		e.LastAccess = now
+		submap[id] = e
+	}
+}
+
 // SetCookies implements the SetCookies method of the http.CookieJar interface.
 //
 // It does nothing if the URL's scheme is not HTTP or HTTPS.
@@ -475,9 +525,20 @@ func (j *Jar) setCookies(u *url.URL, cookies []*http.Cookie, now time.Time) {
 	defer j.mu.Unlock()
 
 	submap := j.entries[key]
+	blacklistedMap := j.blacklistedEntries[key]
 	for _, cookie := range cookies {
 		e, err := j.newEntry(cookie, now, defPath, host)
 		if err != nil {
+			continue
+		}
+		blacklisted := false
+		for _, blacklistedItem := range blacklistedMap {
+			if blacklistedItem.shouldSend(e.Secure, e.Domain, e.Path) {
+				blacklisted = true
+				break
+			}
+		}
+		if blacklisted {
 			continue
 		}
 		e.CanonicalHost = host
@@ -695,8 +756,8 @@ func (j *Jar) domainAndType(host, domain string) (string, bool, error) {
 // DefaultCookieFile returns the default cookie file to use
 // for persisting cookie data.
 // The following names will be used in decending order of preference:
-//	- the value of the $GOCOOKIES environment variable.
-//	- $HOME/.go-cookies
+//   - the value of the $GOCOOKIES environment variable.
+//   - $HOME/.go-cookies
 func DefaultCookieFile() string {
 	if f := os.Getenv("GOCOOKIES"); f != "" {
 		return f

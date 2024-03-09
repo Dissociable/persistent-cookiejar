@@ -52,11 +52,13 @@ func (emptyPSL) PublicSuffix(d string) string {
 
 // newTestJar creates an empty Jar with testPSL as the public suffix list.
 func newTestJar(path string) *Jar {
-	jar, err := New(&Options{
-		PublicSuffixList: testPSL{},
-		Filename:         path,
-		NoPersist:        path == "",
-	})
+	jar, err := New(
+		&Options{
+			PublicSuffixList: testPSL{},
+			Filename:         path,
+			NoPersist:        path == "",
+		},
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -310,17 +312,21 @@ func TestDomainAndType(t *testing.T) {
 	for _, tc := range domainAndTypeTests {
 		domain, hostOnly, err := jar.domainAndType(tc.host, tc.domain)
 		if err != tc.wantErr {
-			t.Errorf("%q/%q: got %q error, want %q",
-				tc.host, tc.domain, err, tc.wantErr)
+			t.Errorf(
+				"%q/%q: got %q error, want %q",
+				tc.host, tc.domain, err, tc.wantErr,
+			)
 			continue
 		}
 		if err != nil {
 			continue
 		}
 		if domain != tc.wantDomain || hostOnly != tc.wantHostOnly {
-			t.Errorf("%q/%q: got %q/%t want %q/%t",
+			t.Errorf(
+				"%q/%q: got %q/%t want %q/%t",
 				tc.host, tc.domain, domain, hostOnly,
-				tc.wantDomain, tc.wantHostOnly)
+				tc.wantDomain, tc.wantHostOnly,
+			)
 		}
 	}
 }
@@ -428,7 +434,8 @@ var basicsTests = [...]jarTest{
 			"A=a; path=/foo/bar",
 			"B=b; path=/foo/bar/baz/qux",
 			"C=c; path=/foo/bar/baz",
-			"D=d; path=/foo"},
+			"D=d; path=/foo",
+		},
 		"A=a B=b C=c D=d",
 		[]query{
 			{"http://www.host.test/foo/bar/baz/qux", "B=b C=c A=a D=d"},
@@ -533,7 +540,8 @@ var updateAndDeleteTests = [...]jarTest{
 			"a=1",
 			"b=2; secure",
 			"c=3; httponly",
-			"d=4; secure; httponly"},
+			"d=4; secure; httponly",
+		},
 		"a=1 b=2 c=3 d=4",
 		[]query{
 			{"http://www.host.test", "a=1 c=3"},
@@ -547,7 +555,8 @@ var updateAndDeleteTests = [...]jarTest{
 			"a=w",
 			"b=x; secure",
 			"c=y; httponly",
-			"d=z; secure; httponly"},
+			"d=z; secure; httponly",
+		},
 		"a=w b=x c=y d=z",
 		[]query{
 			{"http://www.host.test", "a=w c=y"},
@@ -559,7 +568,8 @@ var updateAndDeleteTests = [...]jarTest{
 		"http://www.host.test/",
 		[]string{
 			"b=xx",
-			"d=zz; httponly"},
+			"d=zz; httponly",
+		},
 		"a=w b=xx c=y d=zz",
 		[]query{{"http://www.host.test", "a=w b=xx c=y d=zz"}},
 	},
@@ -570,7 +580,8 @@ var updateAndDeleteTests = [...]jarTest{
 			"a=1; max-Age=-1",                    // delete via MaxAge
 			"b=2; " + expiresIn(-10),             // delete via Expires
 			"c=2; max-age=-1; " + expiresIn(-10), // delete via both
-			"d=4; max-age=-1; " + expiresIn(10)}, // MaxAge takes precedence
+			"d=4; max-age=-1; " + expiresIn(10),
+		}, // MaxAge takes precedence
 		"",
 		[]query{{"http://www.host.test", ""}},
 	},
@@ -581,7 +592,8 @@ var updateAndDeleteTests = [...]jarTest{
 			"A=1",
 			"A=2; path=/foo",
 			"A=3; domain=.host.test",
-			"A=4; path=/foo; domain=.host.test"},
+			"A=4; path=/foo; domain=.host.test",
+		},
 		"A=1 A=2 A=3 A=4",
 		[]query{{"http://www.host.test/foo", "A=2 A=4 A=1 A=3"}},
 	},
@@ -592,7 +604,8 @@ var updateAndDeleteTests = [...]jarTest{
 			"A=6",
 			"A=7; path=/foo",
 			"A=8; domain=.google.com",
-			"A=9; path=/foo; domain=.google.com"},
+			"A=9; path=/foo; domain=.google.com",
+		},
 		"A=1 A=2 A=3 A=4 A=6 A=7 A=8 A=9",
 		[]query{
 			{"http://www.host.test/foo", "A=2 A=4 A=1 A=3"},
@@ -644,7 +657,8 @@ var updateAndDeleteTests = [...]jarTest{
 		"http://www.host.test",
 		[]string{
 			"A=; domain=google.com; max-age=-1",
-			"A=; path=/foo; domain=google.com; max-age=-1"},
+			"A=; path=/foo; domain=google.com; max-age=-1",
+		},
 		"A=1 A=2 A=8 A=9",
 		[]query{
 			{"http://www.host.test/foo", "A=2 A=1"},
@@ -656,7 +670,8 @@ var updateAndDeleteTests = [...]jarTest{
 		"http://www.google.com",
 		[]string{
 			"A=; domain=google.com; max-age=-1",
-			"A=; path=/foo; domain=google.com; max-age=-1"},
+			"A=; path=/foo; domain=google.com; max-age=-1",
+		},
 		"A=1 A=2",
 		[]query{
 			{"http://www.host.test/foo", "A=2 A=1"},
@@ -746,7 +761,8 @@ var chromiumBasicsTests = [...]jarTest{
 			"c=3; domain=.c.d.com",
 			"d=4; domain=.d.com",
 			"X=bcd; domain=.b.c.d.com",
-			"X=cd; domain=.c.d.com"},
+			"X=cd; domain=.c.d.com",
+		},
 		"X=bcd X=cd a=1 b=2 c=3 d=4",
 		[]query{
 			{"http://b.c.d.com", "X=bcd X=cd b=2 c=3 d=4"},
@@ -806,7 +822,8 @@ var chromiumBasicsTests = [...]jarTest{
 		"http://www.google.com",
 		[]string{
 			"a=1; domain=.GOOGLE.COM",
-			"b=2; domain=.www.gOOgLE.coM"},
+			"b=2; domain=.www.gOOgLE.coM",
+		},
 		"a=1 b=2",
 		[]query{{"http://www.google.com", "a=1 b=2"}},
 	},
@@ -822,7 +839,8 @@ var chromiumBasicsTests = [...]jarTest{
 		"http://1.2.3.4/foo",
 		[]string{
 			"a=1; domain=.1.2.3.4",
-			"b=2; domain=.3.4"},
+			"b=2; domain=.3.4",
+		},
 		"",
 		[]query{{"http://1.2.3.4/foo", ""}},
 	},
@@ -848,7 +866,8 @@ var chromiumBasicsTests = [...]jarTest{
 		"http://a.b",
 		[]string{
 			"a=1; domain=.b",
-			"b=2; domain=b"},
+			"b=2; domain=b",
+		},
 		"",
 		[]query{{"http://bar.foo", ""}},
 	},
@@ -857,7 +876,8 @@ var chromiumBasicsTests = [...]jarTest{
 		"http://google.com",
 		[]string{
 			"a=1; domain=.com",
-			"b=2; domain=com"},
+			"b=2; domain=com",
+		},
 		"",
 		[]query{{"http://google.com", ""}},
 	},
@@ -866,7 +886,8 @@ var chromiumBasicsTests = [...]jarTest{
 		"http://google.co.uk",
 		[]string{
 			"a=1; domain=.co.uk",
-			"b=2; domain=.uk"},
+			"b=2; domain=.uk",
+		},
 		"",
 		[]query{
 			{"http://google.co.uk", ""},
@@ -879,7 +900,8 @@ var chromiumBasicsTests = [...]jarTest{
 		"http://www.google.com",
 		[]string{
 			"a=1",
-			"b=2; domain=.www.google.com."},
+			"b=2; domain=.www.google.com.",
+		},
 		"a=1",
 		[]query{{"http://www.google.com", "a=1"}},
 	},
@@ -1226,128 +1248,130 @@ var mergeTests = []struct {
 	now         time.Time
 	content     string
 	queries     []query // Queries to test the Jar.Cookies method
-}{{
-	description: "empty jar1",
-	setCookies0: []mergeCookie{
-		{atTime(0), "http://www.host.test", "A=a; max-age=10"},
+}{
+	{
+		description: "empty jar1",
+		setCookies0: []mergeCookie{
+			{atTime(0), "http://www.host.test", "A=a; max-age=10"},
+		},
+		now:     atTime(1),
+		content: "A=a",
+	}, {
+		description: "empty jar0",
+		setCookies1: []mergeCookie{
+			{atTime(0), "http://www.host.test", "A=a; max-age=10"},
+		},
+		now:     atTime(1),
+		content: "A=a",
+	}, {
+		description: "simple override (1)",
+		setCookies0: []mergeCookie{
+			{atTime(0), "http://www.host.test", "A=a; max-age=10"},
+		},
+		setCookies1: []mergeCookie{
+			{atTime(1), "http://www.host.test", "A=b; max-age=10"},
+		},
+		now:     atTime(2),
+		content: "A=b",
+	}, {
+		description: "simple override (2)",
+		setCookies0: []mergeCookie{
+			{atTime(1), "http://www.host.test", "A=a; max-age=10"},
+		},
+		setCookies1: []mergeCookie{
+			{atTime(0), "http://www.host.test", "A=b; max-age=10"},
+		},
+		now:     atTime(2),
+		content: "A=a",
+	}, {
+		description: "expired cookie overrides unexpired cookie",
+		setCookies0: []mergeCookie{
+			{atTime(1), "http://www.host.test", "A=a; max-age=-1"},
+		},
+		setCookies1: []mergeCookie{
+			{atTime(0), "http://www.host.test", "A=b; max-age=10"},
+		},
+		now:     atTime(2),
+		content: "",
+	}, {
+		description: "set overrides expires",
+		setCookies0: []mergeCookie{
+			{atTime(1), "http://www.host.test", "A=a; max-age=10"},
+		},
+		setCookies1: []mergeCookie{
+			{atTime(0), "http://www.host.test", "A=b; max-age=-1"},
+		},
+		now:     atTime(2),
+		content: "A=a",
+	}, {
+		description: "expiry times preserved",
+		setCookies0: []mergeCookie{
+			{atTime(1), "http://www.host.test", "A=a; " + expiresIn(5)},
+		},
+		setCookies1: []mergeCookie{
+			{atTime(0), "http://www.host.test", "B=b; " + expiresIn(4)},
+		},
+		now:     atTime(2),
+		content: "A=a B=b",
+		queries: []query{
+			{"http://www.host.test", "B=b A=a"},
+			{"http://www.host.test", "A=a"},
+			{"http://www.host.test", ""},
+		},
+	}, {
+		description: "prefer receiver when creation times are identical",
+		setCookies0: []mergeCookie{
+			{atTime(0), "http://www.host.test", "A=a; max-age=10"},
+		},
+		setCookies1: []mergeCookie{
+			{atTime(0), "http://www.host.test", "A=b; max-age=10"},
+		},
+		now:     atTime(2),
+		content: "A=a",
+	}, {
+		description: "max-age is persistent even when negative",
+		setCookies0: []mergeCookie{
+			{atTime(0), "http://www.host.test", "A=a; max-age=10"},
+		},
+		setCookies1: []mergeCookie{
+			{atTime(1), "http://www.host.test", "A=b; max-age=-1"},
+		},
+		now:     atTime(2),
+		content: "",
+	}, {
+		description: "expires is persistent even when in the past",
+		setCookies0: []mergeCookie{
+			{atTime(0), "http://www.host.test", "A=a; " + expiresIn(2)},
+		},
+		setCookies1: []mergeCookie{
+			{atTime(1), "http://www.host.test", "A=b; " + expiresIn(-1)},
+		},
+		now:     atTime(2),
+		content: "",
+	}, {
+		description: "many hosts",
+		setCookies0: []mergeCookie{
+			{atTime(1), "http://www.host.test", "A=a0; max-age=10"},
+			{atTime(2), "http://www.host.test/foo/", "A=foo0; max-age=10"},
+			{atTime(1), "http://www.elsewhere", "X=x; max-age=10"},
+		},
+		setCookies1: []mergeCookie{
+			{atTime(1), "http://www.host.test", "A=a1; max-age=10"},
+			{atTime(3), "http://www.host.test", "B=b; max-age=10"},
+			{atTime(1), "http://www.host.test/foo/", "A=foo1; max-age=10"},
+			{atTime(0), "http://www.host.test/foo/", "C=arble; max-age=10"},
+			{atTime(1), "http://nowhere.com", "A=n; max-age=10"},
+		},
+		now:     atTime(2),
+		content: "A=a0 A=foo0 A=n B=b C=arble X=x",
+		queries: []query{
+			{"http://www.host.test/", "A=a0 B=b"},
+			{"http://www.host.test/foo/", "C=arble A=foo0 A=a0 B=b"},
+			{"http://nowhere.com", "A=n"},
+			{"http://www.elsewhere", "X=x"},
+		},
 	},
-	now:     atTime(1),
-	content: "A=a",
-}, {
-	description: "empty jar0",
-	setCookies1: []mergeCookie{
-		{atTime(0), "http://www.host.test", "A=a; max-age=10"},
-	},
-	now:     atTime(1),
-	content: "A=a",
-}, {
-	description: "simple override (1)",
-	setCookies0: []mergeCookie{
-		{atTime(0), "http://www.host.test", "A=a; max-age=10"},
-	},
-	setCookies1: []mergeCookie{
-		{atTime(1), "http://www.host.test", "A=b; max-age=10"},
-	},
-	now:     atTime(2),
-	content: "A=b",
-}, {
-	description: "simple override (2)",
-	setCookies0: []mergeCookie{
-		{atTime(1), "http://www.host.test", "A=a; max-age=10"},
-	},
-	setCookies1: []mergeCookie{
-		{atTime(0), "http://www.host.test", "A=b; max-age=10"},
-	},
-	now:     atTime(2),
-	content: "A=a",
-}, {
-	description: "expired cookie overrides unexpired cookie",
-	setCookies0: []mergeCookie{
-		{atTime(1), "http://www.host.test", "A=a; max-age=-1"},
-	},
-	setCookies1: []mergeCookie{
-		{atTime(0), "http://www.host.test", "A=b; max-age=10"},
-	},
-	now:     atTime(2),
-	content: "",
-}, {
-	description: "set overrides expires",
-	setCookies0: []mergeCookie{
-		{atTime(1), "http://www.host.test", "A=a; max-age=10"},
-	},
-	setCookies1: []mergeCookie{
-		{atTime(0), "http://www.host.test", "A=b; max-age=-1"},
-	},
-	now:     atTime(2),
-	content: "A=a",
-}, {
-	description: "expiry times preserved",
-	setCookies0: []mergeCookie{
-		{atTime(1), "http://www.host.test", "A=a; " + expiresIn(5)},
-	},
-	setCookies1: []mergeCookie{
-		{atTime(0), "http://www.host.test", "B=b; " + expiresIn(4)},
-	},
-	now:     atTime(2),
-	content: "A=a B=b",
-	queries: []query{
-		{"http://www.host.test", "B=b A=a"},
-		{"http://www.host.test", "A=a"},
-		{"http://www.host.test", ""},
-	},
-}, {
-	description: "prefer receiver when creation times are identical",
-	setCookies0: []mergeCookie{
-		{atTime(0), "http://www.host.test", "A=a; max-age=10"},
-	},
-	setCookies1: []mergeCookie{
-		{atTime(0), "http://www.host.test", "A=b; max-age=10"},
-	},
-	now:     atTime(2),
-	content: "A=a",
-}, {
-	description: "max-age is persistent even when negative",
-	setCookies0: []mergeCookie{
-		{atTime(0), "http://www.host.test", "A=a; max-age=10"},
-	},
-	setCookies1: []mergeCookie{
-		{atTime(1), "http://www.host.test", "A=b; max-age=-1"},
-	},
-	now:     atTime(2),
-	content: "",
-}, {
-	description: "expires is persistent even when in the past",
-	setCookies0: []mergeCookie{
-		{atTime(0), "http://www.host.test", "A=a; " + expiresIn(2)},
-	},
-	setCookies1: []mergeCookie{
-		{atTime(1), "http://www.host.test", "A=b; " + expiresIn(-1)},
-	},
-	now:     atTime(2),
-	content: "",
-}, {
-	description: "many hosts",
-	setCookies0: []mergeCookie{
-		{atTime(1), "http://www.host.test", "A=a0; max-age=10"},
-		{atTime(2), "http://www.host.test/foo/", "A=foo0; max-age=10"},
-		{atTime(1), "http://www.elsewhere", "X=x; max-age=10"},
-	},
-	setCookies1: []mergeCookie{
-		{atTime(1), "http://www.host.test", "A=a1; max-age=10"},
-		{atTime(3), "http://www.host.test", "B=b; max-age=10"},
-		{atTime(1), "http://www.host.test/foo/", "A=foo1; max-age=10"},
-		{atTime(0), "http://www.host.test/foo/", "C=arble; max-age=10"},
-		{atTime(1), "http://nowhere.com", "A=n; max-age=10"},
-	},
-	now:     atTime(2),
-	content: "A=a0 A=foo0 A=n B=b C=arble X=x",
-	queries: []query{
-		{"http://www.host.test/", "A=a0 B=b"},
-		{"http://www.host.test/foo/", "C=arble A=foo0 A=a0 B=b"},
-		{"http://nowhere.com", "A=n"},
-		{"http://www.elsewhere", "X=x"},
-	},
-}}
+}
 
 func TestSaveMerge(t *testing.T) {
 	dir, err := ioutil.TempDir("", "cookiejar-test")
@@ -1378,8 +1402,10 @@ func TestSaveMerge(t *testing.T) {
 		// Make sure jar content matches our expectations.
 		if got != test.content {
 			t.Logf("entries: %#v", jar0.entries)
-			t.Errorf("Test %q Content\ngot  %q\nwant %q",
-				test.description, got, test.content)
+			t.Errorf(
+				"Test %q Content\ngot  %q\nwant %q",
+				test.description, got, test.content,
+			)
 		}
 		testQueries(t, test.queries, test.description, jar0, test.now)
 	}
@@ -1441,13 +1467,17 @@ func TestDeleteExpired(t *testing.T) {
 	jar := newTestJar("")
 
 	now := tNow
-	setCookies(jar, "http://foo.com", []string{
-		"a=a; " + expiresIn(1),
-		"b=b; " + expiresIn(expirySeconds+3),
-	}, tNow)
-	setCookies(jar, "http://bar.com", []string{
-		"c=c; " + expiresIn(1),
-	}, tNow)
+	setCookies(
+		jar, "http://foo.com", []string{
+			"a=a; " + expiresIn(1),
+			"b=b; " + expiresIn(expirySeconds+3),
+		}, tNow,
+	)
+	setCookies(
+		jar, "http://bar.com", []string{
+			"c=c; " + expiresIn(1),
+		}, tNow,
+	)
 	// Make sure all the cookies are there to start with.
 	got := allCookies(jar, now)
 	want := "a=a b=b c=c"
@@ -1477,22 +1507,35 @@ func TestDeleteExpired(t *testing.T) {
 	}
 }
 
-var serializeTestCookies = []*http.Cookie{{
-	Name:       "foo",
-	Value:      "bar",
-	Path:       "/p",
-	Domain:     "example.com",
-	Expires:    time.Now(),
-	RawExpires: time.Now().Format(time.RFC3339Nano),
-	MaxAge:     99,
-	Secure:     true,
-	HttpOnly:   true,
-	Raw:        "raw string",
-	Unparsed:   []string{"x", "y", "z"},
-}}
+var serializeTestCookies = []*http.Cookie{
+	{
+		Name:       "foo",
+		Value:      "bar",
+		Path:       "/p",
+		Domain:     "example.com",
+		Expires:    time.Now(),
+		RawExpires: time.Now().Format(time.RFC3339Nano),
+		MaxAge:     99,
+		Secure:     true,
+		HttpOnly:   true,
+		Raw:        "raw string",
+		Unparsed:   []string{"x", "y", "z"},
+	},
+}
 
 var serializeTestURL, _ = url.Parse("http://example.com/x")
 
+func TestBlacklist(t *testing.T) {
+	c := qt.New(t)
+	d, err := ioutil.TempDir("", "")
+	c.Assert(err, qt.Equals, nil)
+	defer os.RemoveAll(d)
+	file := filepath.Join(d, "cookies")
+	j := newTestJar(file)
+	j.SetBlacklistedCookies(serializeTestURL, serializeTestCookies)
+	j.SetCookies(serializeTestURL, serializeTestCookies)
+	c.Assert(len(j.entries), qt.Equals, 0)
+}
 func TestLoadSave(t *testing.T) {
 	c := qt.New(t)
 	d, err := ioutil.TempDir("", "")
@@ -1544,11 +1587,13 @@ func TestLoadSaveWithNoPersist(t *testing.T) {
 	if err := j.Save(); err != nil {
 		t.Fatalf("cannot save: %v", err)
 	}
-	jar, err := New(&Options{
-		PublicSuffixList: testPSL{},
-		Filename:         file,
-		NoPersist:        true,
-	})
+	jar, err := New(
+		&Options{
+			PublicSuffixList: testPSL{},
+			Filename:         file,
+			NoPersist:        true,
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1576,10 +1621,12 @@ func TestLoadNonExistentParent(t *testing.T) {
 	}
 	defer os.RemoveAll(d)
 	file := filepath.Join(d, "foo", "cookies")
-	_, err = New(&Options{
-		PublicSuffixList: testPSL{},
-		Filename:         file,
-	})
+	_, err = New(
+		&Options{
+			PublicSuffixList: testPSL{},
+			Filename:         file,
+		},
+	)
 	if err != nil {
 		t.Fatalf("cannot make cookie jar: %v", err)
 	}
@@ -1592,10 +1639,12 @@ func TestLoadNonExistentParentOfParent(t *testing.T) {
 	}
 	defer os.RemoveAll(d)
 	file := filepath.Join(d, "foo", "foo", "cookies")
-	_, err = New(&Options{
-		PublicSuffixList: testPSL{},
-		Filename:         file,
-	})
+	_, err = New(
+		&Options{
+			PublicSuffixList: testPSL{},
+			Filename:         file,
+		},
+	)
 	if err != nil {
 		t.Fatalf("cannot make cookie jar: %v", err)
 	}
@@ -1611,9 +1660,11 @@ func TestLoadOldFormat(t *testing.T) {
 	defer os.Remove(f.Name())
 	f.Write([]byte("{}"))
 	f.Close()
-	jar, err := New(&Options{
-		Filename: f.Name(),
-	})
+	jar, err := New(
+		&Options{
+			Filename: f.Name(),
+		},
+	)
 	if err != nil {
 		t.Errorf("got error: %v", err)
 	}
@@ -1630,9 +1681,11 @@ func TestLoadInvalidJSON(t *testing.T) {
 	defer os.Remove(f.Name())
 	f.Write([]byte("["))
 	f.Close()
-	jar, err := New(&Options{
-		Filename: f.Name(),
-	})
+	jar, err := New(
+		&Options{
+			Filename: f.Name(),
+		},
+	)
 	if err == nil {
 		t.Fatalf("expected error, got none")
 	}
@@ -1655,19 +1708,25 @@ func TestLoadDifferentPublicSuffixList(t *testing.T) {
 	now := tNow
 	// With no public suffix list, some domains that should be
 	// separate can set cookies for each other.
-	jar, err := newAtTime(&Options{
-		Filename:         f.Name(),
-		PublicSuffixList: emptyPSL{},
-	}, now)
+	jar, err := newAtTime(
+		&Options{
+			Filename:         f.Name(),
+			PublicSuffixList: emptyPSL{},
+		}, now,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	setCookies(jar, "http://foo.co.uk", []string{
-		"a=a; max-age=10; domain=.co.uk",
-	}, now)
-	setCookies(jar, "http://bar.co.uk", []string{
-		"b=b; max-age=10; domain=.co.uk",
-	}, now)
+	setCookies(
+		jar, "http://foo.co.uk", []string{
+			"a=a; max-age=10; domain=.co.uk",
+		}, now,
+	)
+	setCookies(
+		jar, "http://bar.co.uk", []string{
+			"b=b; max-age=10; domain=.co.uk",
+		}, now,
+	)
 
 	// With the default public suffix, the cookies are
 	// correctly segmented into their proper domains.
@@ -1680,10 +1739,12 @@ func TestLoadDifferentPublicSuffixList(t *testing.T) {
 		t.Fatalf("cannot save jar: %v", err)
 	}
 
-	jar, err = newAtTime(&Options{
-		Filename:         f.Name(),
-		PublicSuffixList: testPSL{},
-	}, now)
+	jar, err = newAtTime(
+		&Options{
+			Filename:         f.Name(),
+			PublicSuffixList: testPSL{},
+		}, now,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1698,10 +1759,12 @@ func TestLoadDifferentPublicSuffixList(t *testing.T) {
 
 	// When we reload with the original (empty) public suffix
 	// we get all the original cookies back.
-	jar, err = newAtTime(&Options{
-		Filename:         f.Name(),
-		PublicSuffixList: emptyPSL{},
-	}, now)
+	jar, err = newAtTime(
+		&Options{
+			Filename:         f.Name(),
+			PublicSuffixList: emptyPSL{},
+		}, now,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1750,13 +1813,13 @@ func TestLockFile(t *testing.T) {
 }
 
 // jarTest encapsulates the following actions on a jar:
-//   1. Perform SetCookies with fromURL and the cookies from setCookies.
-//      (Done at time tNow + 0 ms.)
-//   2. Check that the entries in the jar matches content.
-//      (Done at time tNow + 1001 ms.)
-//   3. For each query in tests: Check that Cookies with toURL yields the
-//      cookies in want.
-//      (Query n done at tNow + (n+2)*1001 ms.)
+//  1. Perform SetCookies with fromURL and the cookies from setCookies.
+//     (Done at time tNow + 0 ms.)
+//  2. Check that the entries in the jar matches content.
+//     (Done at time tNow + 1001 ms.)
+//  3. For each query in tests: Check that Cookies with toURL yields the
+//     cookies in want.
+//     (Query n done at tNow + (n+2)*1001 ms.)
 type jarTest struct {
 	description string   // The description of what this test is supposed to test
 	fromURL     string   // The full URL of the request from which Set-Cookie headers where received
@@ -1783,8 +1846,10 @@ func (test jarTest) run(t *testing.T, jar *Jar) {
 
 	// Make sure jar content matches our expectations.
 	if got != test.content {
-		t.Errorf("Test %q Content\ngot  %q\nwant %q",
-			test.description, got, test.content)
+		t.Errorf(
+			"Test %q Content\ngot  %q\nwant %q",
+			test.description, got, test.content,
+		)
 	}
 
 	testQueries(t, test.queries, test.description, jar, now)
@@ -1889,108 +1954,118 @@ var allCookiesTests = []struct {
 	about         string
 	set           []setCommand
 	expectCookies []*http.Cookie
-}{{
-	about: "no cookies",
-}, {
-	about: "a cookie",
-	set: []setCommand{{
-		url: mustParseURL("https://www.google.com/"),
-		cookies: []*http.Cookie{
-			&http.Cookie{
-				Name:    "test-cookie",
-				Value:   "test-value",
-				Expires: tNow.Add(24 * time.Hour),
+}{
+	{
+		about: "no cookies",
+	}, {
+		about: "a cookie",
+		set: []setCommand{
+			{
+				url: mustParseURL("https://www.google.com/"),
+				cookies: []*http.Cookie{
+					&http.Cookie{
+						Name:    "test-cookie",
+						Value:   "test-value",
+						Expires: tNow.Add(24 * time.Hour),
+					},
+				},
 			},
 		},
-	}},
-	expectCookies: []*http.Cookie{
-		&http.Cookie{
-			Name:     "test-cookie",
-			Value:    "test-value",
-			Domain:   "www.google.com",
-			Path:     "/",
-			Secure:   false,
-			HttpOnly: false,
-			Expires:  tNow.Add(24 * time.Hour),
-		},
-	},
-}, {
-	about: "expired cookie",
-	set: []setCommand{{
-		url: mustParseURL("https://www.google.com/"),
-		cookies: []*http.Cookie{
+		expectCookies: []*http.Cookie{
 			&http.Cookie{
-				Name:    "test-cookie",
-				Value:   "test-value",
-				Expires: tNow.Add(-24 * time.Hour),
-			},
-		},
-	}},
-}, {
-	about: "cookie for subpath",
-	set: []setCommand{{
-		url: mustParseURL("https://www.google.com/subpath/place"),
-		cookies: []*http.Cookie{
-			&http.Cookie{
-				Name:    "test-cookie",
-				Value:   "test-value",
-				Expires: tNow.Add(24 * time.Hour),
-			},
-		},
-	}},
-	expectCookies: []*http.Cookie{
-		&http.Cookie{
-			Name:     "test-cookie",
-			Value:    "test-value",
-			Domain:   "www.google.com",
-			Path:     "/subpath",
-			Secure:   false,
-			HttpOnly: false,
-			Expires:  tNow.Add(24 * time.Hour),
-		},
-	},
-}, {
-	about: "multiple cookies",
-	set: []setCommand{{
-		url: mustParseURL("https://www.google.com/"),
-		cookies: []*http.Cookie{
-			&http.Cookie{
-				Name:    "test-cookie",
-				Value:   "test-value",
-				Expires: tNow.Add(24 * time.Hour),
+				Name:     "test-cookie",
+				Value:    "test-value",
+				Domain:   "www.google.com",
+				Path:     "/",
+				Secure:   false,
+				HttpOnly: false,
+				Expires:  tNow.Add(24 * time.Hour),
 			},
 		},
 	}, {
-		url: mustParseURL("https://www.google.com/subpath/"),
-		cookies: []*http.Cookie{
-			&http.Cookie{
-				Name:    "test-cookie",
-				Value:   "test-value",
-				Expires: tNow.Add(24 * time.Hour),
+		about: "expired cookie",
+		set: []setCommand{
+			{
+				url: mustParseURL("https://www.google.com/"),
+				cookies: []*http.Cookie{
+					&http.Cookie{
+						Name:    "test-cookie",
+						Value:   "test-value",
+						Expires: tNow.Add(-24 * time.Hour),
+					},
+				},
 			},
 		},
-	}},
-	expectCookies: []*http.Cookie{
-		&http.Cookie{
-			Name:     "test-cookie",
-			Value:    "test-value",
-			Domain:   "www.google.com",
-			Path:     "/subpath",
-			Secure:   false,
-			HttpOnly: false,
-			Expires:  tNow.Add(24 * time.Hour),
+	}, {
+		about: "cookie for subpath",
+		set: []setCommand{
+			{
+				url: mustParseURL("https://www.google.com/subpath/place"),
+				cookies: []*http.Cookie{
+					&http.Cookie{
+						Name:    "test-cookie",
+						Value:   "test-value",
+						Expires: tNow.Add(24 * time.Hour),
+					},
+				},
+			},
 		},
-		&http.Cookie{
-			Name:     "test-cookie",
-			Value:    "test-value",
-			Domain:   "www.google.com",
-			Path:     "/",
-			Secure:   false,
-			HttpOnly: false,
-			Expires:  tNow.Add(24 * time.Hour),
+		expectCookies: []*http.Cookie{
+			&http.Cookie{
+				Name:     "test-cookie",
+				Value:    "test-value",
+				Domain:   "www.google.com",
+				Path:     "/subpath",
+				Secure:   false,
+				HttpOnly: false,
+				Expires:  tNow.Add(24 * time.Hour),
+			},
+		},
+	}, {
+		about: "multiple cookies",
+		set: []setCommand{
+			{
+				url: mustParseURL("https://www.google.com/"),
+				cookies: []*http.Cookie{
+					&http.Cookie{
+						Name:    "test-cookie",
+						Value:   "test-value",
+						Expires: tNow.Add(24 * time.Hour),
+					},
+				},
+			}, {
+				url: mustParseURL("https://www.google.com/subpath/"),
+				cookies: []*http.Cookie{
+					&http.Cookie{
+						Name:    "test-cookie",
+						Value:   "test-value",
+						Expires: tNow.Add(24 * time.Hour),
+					},
+				},
+			},
+		},
+		expectCookies: []*http.Cookie{
+			&http.Cookie{
+				Name:     "test-cookie",
+				Value:    "test-value",
+				Domain:   "www.google.com",
+				Path:     "/subpath",
+				Secure:   false,
+				HttpOnly: false,
+				Expires:  tNow.Add(24 * time.Hour),
+			},
+			&http.Cookie{
+				Name:     "test-cookie",
+				Value:    "test-value",
+				Domain:   "www.google.com",
+				Path:     "/",
+				Secure:   false,
+				HttpOnly: false,
+				Expires:  tNow.Add(24 * time.Hour),
+			},
 		},
 	},
-}}
+}
 
 func TestAllCookies(t *testing.T) {
 	dir, err := ioutil.TempDir("", "cookiejar-test")
@@ -2006,7 +2081,12 @@ func TestAllCookies(t *testing.T) {
 		}
 		gotCookies := jar.allCookies(tNow)
 		if len(gotCookies) != len(test.expectCookies) {
-			t.Fatalf("Test %q: unexpected number of cookies returned, expected: %d, got: %d", test.about, len(test.expectCookies), len(gotCookies))
+			t.Fatalf(
+				"Test %q: unexpected number of cookies returned, expected: %d, got: %d",
+				test.about,
+				len(test.expectCookies),
+				len(gotCookies),
+			)
 		}
 		for j, c := range test.expectCookies {
 			if !cookiesEqual(c, gotCookies[j]) {
